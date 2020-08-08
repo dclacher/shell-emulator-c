@@ -18,16 +18,22 @@ In particular,
     • You can run the provided executable for a demonstration.
 */
 
+/* A function that checks if the user has entered "exit" as the input */
 int compareStringToExit(char *str1);
+/* A function to isolate the code that executes a command provided by the user */
+void executeCommand(char *command);
 
 int main(int argc, char *argv[])
 {
-    char *stdinBuffer;
+    char *stdinBuffer, *token, *tempToken;
     const char byeMessage[] = "Bye bye.\n";
+    const char delimiter[2] = ";";
 
     while (1)
     {
         stdinBuffer = malloc(1024 * sizeof(char));
+        token = malloc(64 * sizeof(char));
+        tempToken = malloc(64 * sizeof(char));
         // reading command line from the user
         read(STDIN_FILENO, stdinBuffer, 1024);
         // if the input is "exit" or CTR+D, print "Bye bye" and terminate the shell
@@ -36,15 +42,31 @@ int main(int argc, char *argv[])
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
         }
-        /*
-        // TODO The CTRL+D part isn't working
+        // get the first command
+        token = strtok(stdinBuffer, delimiter);
+        printf("first token in main: %s\n", token);
+        // get the other commands, if there is at least one more
+        while (token != NULL) {
+            for (int w = 0; w < 64 * sizeof(char); w++)
+            {
+                tempToken[w] = token[w];
+            }
+            printf("token inside while in main: %s\n", token);
+            printf("temp token inside while in main: %s\n", tempToken);
+            token = strtok(NULL, delimiter);
+            printf("token inside while in main after calling strtok again: %s\n", token);
+            printf("temp token inside while in main after calling strtok again: %s\n", tempToken);
+            executeCommand(tempToken);
+        }
+        /* TODO The CTRL+D part isn't working
         if (stdinBuffer[0] == '\004')
         {
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
-        }
-        */
+        }*/
         free(stdinBuffer);
+        free(token);
+        //free(tempToken);
     }
     
     /*While(1)
@@ -57,6 +79,26 @@ int main(int argc, char *argv[])
             - child should exec to the new program
             - parent process waits for its child to terminate
             - parent prints a message with pid and returned status of finished child process*/
+}
+
+void executeCommand(char *command)
+{
+    char *tk;
+    char *argv[10];
+    const char space[2] = " ";
+    tk = strtok(command, space);
+    argv[0] = tk;
+    int i = 1;
+    while (tk != NULL) {
+        printf("token inside while in executeCommand: %s\n", tk);
+        tk = strtok(NULL, space);
+        argv[i] = tk;
+        i++;
+    }
+    for (int x = 0; x < 3; x++)
+    {
+        printf("loop to print argv: %s\n", argv[x]);
+    }
 }
 
 int compareStringToExit(char *str1)
