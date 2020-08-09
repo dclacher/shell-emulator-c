@@ -17,11 +17,12 @@ int main(int argc, char *argv[])
     char *stdinBuffer, *token;
     const char byeMessage[] = "Bye bye.\n";
     const char delimiter[4] = ";";
+    char *vector[20];
 
     while (1)
     {
         stdinBuffer = malloc(1024 * sizeof(char));
-        token = malloc(64 * sizeof(char));
+        token = malloc(16 * sizeof(char));
         // reading command line from the user
         read(STDIN_FILENO, stdinBuffer, 1024);
         // if the input is "exit" or CTR+D, print "Bye bye" and terminate the shell
@@ -30,6 +31,8 @@ int main(int argc, char *argv[])
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
         }
+        // removing the line break that is added when the user presses ENTER in stdin
+        stdinBuffer = strtok(stdinBuffer, "\n");
         /* TODO The CTRL+D part isn't working
         if (stdinBuffer[0] == '\004')
         {
@@ -38,12 +41,20 @@ int main(int argc, char *argv[])
         }*/
 
         // IDEA: maybe put all commands in a VECTOR first, and then the parent deals with this vector
-
-        // get the first command
         token = strtok(stdinBuffer, delimiter);
-        free(stdinBuffer);
-        // get the other commands, if there is at least one more
+        vector[0] = token;
+        int i = 1;
         while (token != NULL) {
+            // printf(" %s\n", token);
+            token = strtok(NULL, delimiter);
+            vector[i] = token;
+            i++;
+        }
+        vector[i] = NULL;
+
+        int j = 0;
+        while (vector[j] != NULL)
+        {
             // Fork
             int pid = fork();
             if (pid == -1)
@@ -63,19 +74,13 @@ int main(int argc, char *argv[])
                     {
                         printf("Child with PID %d had an abnormal termination with signal %d.\n", pid, WTERMSIG(status));
                     }
-                    // the "pid" variable here is the pid of the child returned to the parent
-                    // the "write" function here should get an array of integers
-                    //printf("Am I getting here? Status: %d, PID: %d\n", WEXITSTATUS(status), pid);
-                    // int s = WEXITSTATUS(status);
-                    // write(STDOUT_FILENO, &s, sizeof(s));
-                    // write(STDOUT_FILENO, &pid, sizeof(pid));
                 }
-                token = strtok(NULL, delimiter);
             }
             else if (pid == 0) // Child
             {
-                executeCommand(token);
+                executeCommand(vector[j]);
             }
+            j++;
         }
     }
 }
@@ -102,7 +107,7 @@ int compareStringToExit(char *str1)
 {
     int c = 0;
     char *str2;
-    str2 = malloc(1024 * sizeof(char));
+    str2 = malloc(16 * sizeof(char));
     str2[0] = 'e';
     str2[1] = 'x';
     str2[2] = 'i';
