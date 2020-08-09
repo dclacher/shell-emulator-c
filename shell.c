@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         }
         // removing the line break that is added when the user presses ENTER in stdin
         stdinBuffer = strtok(stdinBuffer, "\n");
-        /* TODO The CTRL+D part isn't working
+        /* PROBLEM The CTRL+D part isn't working
         if (stdinBuffer[0] == '\004')
         {
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
@@ -65,14 +65,22 @@ int main(int argc, char *argv[])
             if (pid > 0) // Parent
             {
                 // wait for the child that is executing the command
-                if (wait(&status) >= 0)
+                if (waitpid(pid, &status, 0) >= 0)
                 {
                     if (WIFEXITED(status)) // normal child termination
                     {
+                        // PROBLEM: write() isn't working, it's displaying nothing
+                        // int st = WEXITSTATUS(status);
+                        // write(STDOUT_FILENO, &pid, sizeof(pid));
+                        // write(STDOUT_FILENO, &st, sizeof(WEXITSTATUS(status)));
                         printf("Child with PID %d had a normal termination with status %d.\n", pid, WEXITSTATUS(status));
                     }
                     else if (WIFSIGNALED(status)) // abnormal child termination
                     {
+                        // PROBLEM: write() isn't working, it's displaying nothing
+                        // int st = WEXITSTATUS(status);
+                        // write(STDOUT_FILENO, &pid, sizeof(pid));
+                        // write(STDOUT_FILENO, &st, sizeof(WEXITSTATUS(status)));
                         printf("Child with PID %d had an abnormal termination with signal %d.\n", pid, WTERMSIG(status));
                     }
                 }
@@ -102,8 +110,8 @@ void executeCommand(char *command)
         i++;
     }
     argv[i] = NULL;
+    // child calls execvp() to execute the command
     execvp(argv[0], argv);
-    exit(0);
 }
 
 int compareStringToExit(char *str1)
