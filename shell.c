@@ -40,22 +40,22 @@ int main(int argc, char *argv[])
             exit(1);
         }*/
 
-        // IDEA: maybe put all commands in a VECTOR first, and then the parent deals with this vector
+        // use a vector to store all commands first, only then fork to create the children
         token = strtok(stdinBuffer, delimiter);
         vector[0] = token;
         int i = 1;
         while (token != NULL) {
-            // printf(" %s\n", token);
             token = strtok(NULL, delimiter);
             vector[i] = token;
             i++;
         }
         vector[i] = NULL;
 
+        // start the loop that will create one child per command that needs to be executed
         int j = 0;
         while (vector[j] != NULL)
         {
-            // Fork
+            // fork
             int pid = fork();
             if (pid == -1)
             {
@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
             }
             if (pid > 0) // Parent
             {
+                // wait for the child that is executing the command
                 if (wait(&status) >= 0)
                 {
                     if (WIFEXITED(status)) // normal child termination
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
             }
             else if (pid == 0) // Child
             {
+                // call the method that will execute the command
                 executeCommand(vector[j]);
             }
             j++;
@@ -90,6 +92,7 @@ void executeCommand(char *command)
     char *tk;
     char *argv[20];
     const char space[4] = " ";
+    // use a vector to save all the arguments for the command, if there are arguments
     tk = strtok(command, space);
     argv[0] = tk;
     int i = 1;
