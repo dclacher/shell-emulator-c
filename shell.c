@@ -14,15 +14,14 @@ void executeCommand(char *command);
 int main(int argc, char *argv[])
 {
     int status;
-    char *stdinBuffer, *token, *tempToken;
+    char *stdinBuffer, *token;
     const char byeMessage[] = "Bye bye.\n";
-    const char delimiter[2] = ";";
+    const char delimiter[4] = ";";
 
     while (1)
     {
         stdinBuffer = malloc(1024 * sizeof(char));
         token = malloc(64 * sizeof(char));
-        tempToken = malloc(64 * sizeof(char));
         // reading command line from the user
         read(STDIN_FILENO, stdinBuffer, 1024);
         // if the input is "exit" or CTR+D, print "Bye bye" and terminate the shell
@@ -31,16 +30,20 @@ int main(int argc, char *argv[])
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
         }
+        /* TODO The CTRL+D part isn't working
+        if (stdinBuffer[0] == '\004')
+        {
+            write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
+            exit(1);
+        }*/
+
+        // IDEA: maybe put all commands in a VECTOR first, and then the parent deals with this vector
+
         // get the first command
         token = strtok(stdinBuffer, delimiter);
+        free(stdinBuffer);
         // get the other commands, if there is at least one more
         while (token != NULL) {
-            int w;
-            for (w = 0; w < 64 * sizeof(char); w++)
-            {
-                tempToken[w] = token[w];
-            }
-            //tempToken[w + 1] = ';';
             // Fork
             int pid = fork();
             if (pid == -1)
@@ -50,38 +53,38 @@ int main(int argc, char *argv[])
             }
             if (pid > 0) // Parent
             {
-                if (wait(&status) >= 0 && WIFEXITED(status))
+                if (wait(&status) >= 0)
                 {
+                    if (WIFEXITED(status)) // normal child termination
+                    {
+                        printf("Child with PID %d had a normal termination with status %d.\n", pid, WEXITSTATUS(status));
+                    }
+                    else if (WIFSIGNALED(status)) // abnormal child termination
+                    {
+                        printf("Child with PID %d had an abnormal termination with signal %d.\n", pid, WTERMSIG(status));
+                    }
                     // the "pid" variable here is the pid of the child returned to the parent
-                    // the "write" function here should get an array if integers
-                    write(STDOUT_FILENO, &status, sizeof(int));
-                    write(STDOUT_FILENO, &pid, sizeof(int));
-                    //exit(12);
+                    // the "write" function here should get an array of integers
+                    //printf("Am I getting here? Status: %d, PID: %d\n", WEXITSTATUS(status), pid);
+                    // int s = WEXITSTATUS(status);
+                    // write(STDOUT_FILENO, &s, sizeof(s));
+                    // write(STDOUT_FILENO, &pid, sizeof(pid));
                 }
-                //free(stdinBuffer);
-                //free(token);
-                //free(tempToken);
                 token = strtok(NULL, delimiter);
             }
             else if (pid == 0) // Child
             {
-                executeCommand(tempToken);
+                executeCommand(token);
             }
         }
-        /* TODO The CTRL+D part isn't working
-        if (stdinBuffer[0] == '\004')
-        {
-            write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
-            exit(1);
-        }*/
     }
 }
 
 void executeCommand(char *command)
 {
     char *tk;
-    char *argv[10];
-    const char space[2] = " ";
+    char *argv[20];
+    const char space[4] = " ";
     tk = strtok(command, space);
     argv[0] = tk;
     int i = 1;
@@ -92,7 +95,7 @@ void executeCommand(char *command)
     }
     argv[i] = NULL;
     execvp(argv[0], argv);
-    exit(9);
+    exit(0);
 }
 
 int compareStringToExit(char *str1)
