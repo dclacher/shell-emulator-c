@@ -31,14 +31,14 @@ int main(int argc, char *argv[])
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
         }
-        // removing the line break that is added when the user presses ENTER in stdin
-        stdinBuffer = strtok(stdinBuffer, "\n");
-        /* PROBLEM The CTRL+D part isn't working
-        if (stdinBuffer[0] == '\004')
+        /* PROBLEM CTRL+D part isn't working properly
+        if (stdinBuffer[0] == -1)
         {
             write(STDOUT_FILENO, byeMessage, sizeof(byeMessage));
             exit(1);
         }*/
+        // removing the line break that is added when the user presses ENTER in stdin
+        stdinBuffer = strtok(stdinBuffer, "\n");
 
         // use a vector to store all commands first, only then fork to create the children
         token = strtok(stdinBuffer, delimiter);
