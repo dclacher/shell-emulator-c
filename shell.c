@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
             if (pid > 0) // Parent
             {
                 // wait for the child that is executing the command
-                if (waitpid(pid, &status, 0) >= 0)
+                if (wait(&status) >= 0)
                 {
                     if (WIFEXITED(status)) // normal child termination
                     {
@@ -111,7 +111,10 @@ void executeCommand(char *command)
     }
     argv[i] = NULL;
     // child calls execvp() to execute the command
-    execvp(argv[0], argv);
+    int result = execvp(argv[0], argv);
+    // if execvp returns -1 (error), exit with a different code
+    if (result == -1)
+        exit(2);
 }
 
 int compareStringToExit(char *str1)
